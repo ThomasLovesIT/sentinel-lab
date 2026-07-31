@@ -1,0 +1,46 @@
+---
+- name: Configure Linux servers
+  hosts: linux
+  become: yes
+  tasks:
+    - name: Ensure baseline packages are installed
+      apt:
+        name:
+          - htop
+          - curl
+          - vim
+          - unattended-upgrades
+          - auditd
+        state: present
+        update_cache: yes
+
+    - name: Enable automatic security updates
+      copy:
+        dest: /etc/apt/apt.conf.d/20auto-upgrades
+        content: |
+          APT::Periodic::Update-Package-Lists "1";
+          APT::Periodic::Unattended-Upgrade "1";
+
+    - name: Harden SSH - no root login
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^#?PermitRootLogin'
+        line: 'PermitRootLogin no'
+      notify: restart sshd
+
+    - name: Install node_exporter for monitoring
+      apt:
+        name: prometheus-node-exporter
+        state: present
+
+    - name: Ensure node_exporter is running
+      systemd:
+        name: prometheus-node-exporter
+        state: started
+        enabled: yes
+
+  handlers:
+    - name: restart sshd
+      systemd:
+        name: ssh
+        state: restarted
