@@ -44,3 +44,18 @@
       systemd:
         name: ssh
         state: restarted
+- name: Configure the domain controller
+  hosts: windows
+  tasks:
+    - name: Ensure AD users exist
+      microsoft.ad.user:
+        name: "{{ item }}"
+        password: "Passw0rd!2026"
+        state: present
+        path: "OU=LabUsers,DC=sentinel,DC=lab"
+      loop:
+        - labuser1
+        - labuser2
+        - labuser3
+        - labuser4
+        - labuser5
